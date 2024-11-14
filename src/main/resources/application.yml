@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/byte-bites-restaurant
     username: postgres
-    password: estimefun2005
+    password:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
