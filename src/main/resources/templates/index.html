@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Management - SQL Query</title>
+    <style>
+        /* Кавова палітра */
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #f5f0e1; /* кремовий фон */
+            color: #5c4033; /* темно-коричневий текст */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #ede4db; /* світло-бежевий фон */
+            border: 4px solid #bca086; /* коричнева рамка */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #8b5e3c; /* теплий коричневий */
+        }
+
+        .sql-input, .api-selector, .submit-button {
+            width: 100%;
+            background-color: #f7f2ec; /* кремовий відтінок */
+            color: #5c4033;
+            border: 2px solid #bca086;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .sql-input:focus, .api-selector:focus, .submit-button:focus {
+            outline: none;
+            border-color: #8b5e3c;
+            box-shadow: 0 0 8px rgba(139, 94, 60, 0.2);
+        }
+
+        .submit-button {
+            cursor: pointer;
+            background-color: #d9c2ac; /* світло-коричневий */
+        }
+
+        .submit-button:hover {
+            background-color: #bfa288; /* темніший коричневий */
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: #fff;
+        }
+
+        th, td {
+            border: 1px solid #d1bfa3;
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #e6ccb2; /* м'який бежевий */
+            color: #5c4033;
+        }
+
+        td {
+            background-color: #fdfcf8;
+            color: #4a2f25;
+        }
+
+        .error {
+            color: #e74c3c; /* червоний для помилок */
+            margin-top: 15px;
+        }
+
+        .success {
+            color: #27ae60; /* зелений для успіху */
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #8b5e3c;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🍽️ Restaurant Management - SQL Query</h1>
+
+    <!-- Поле для введення SQL-запиту -->
+    <textarea id="sql-input" class="sql-input" rows="4" placeholder="Enter your SQL query here..."></textarea>
+    <button id="execute-sql" class="submit-button">Execute SQL</button>
+
+    <!-- Випадаючий список для вибору контролера -->
+    <select id="api-selector" class="api-selector">
+        <option value="dishes">Fetch Dishes</option>
+        <option value="ingredients">Fetch Ingredients</option>
+        <option value="kitchens">Fetch Kitchens</option>
+        <option value="dish-ingredients">Fetch Dish Ingredients</option>
+    </select>
+    <button id="fetch-data" class="submit-button">Fetch Data</button>
+
+    <!-- Контейнер для таблиці -->
+    <div id="table-container" class="table-container"></div>
+    <div id="error-message" class="error"></div>
+</div>
+
+<div class="footer">
+    by Denys Lysenok KI-221
+</div>
+
+<script>
+    const apiMapping = {
+        dishes: '/api/dishes',
+        ingredients: '/api/ingredients',
+        kitchens: '/api/kitchens',
+        'dish-ingredients': '/api/dish-ingredients'
+    };
+
+    // Виконання SQL-запиту через SQLExecutorController
+    document.getElementById("execute-sql").addEventListener("click", function () {
+        const sqlQuery = document.getElementById("sql-input").value;
+
+        fetch('/api/sql/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: sqlQuery })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("error-message").textContent = data.error;
+                    document.getElementById("table-container").innerHTML = "";
+                } else {
+                    document.getElementById("error-message").textContent = "";
+                    renderTable(data);
+                }
+            })
+            .catch(error => {
+                document.getElementById("error-message").textContent = "Error executing SQL query.";
+                console.error("Error:", error);
+            });
+    });
+
+    // Отримання даних через існуючі контролери
+    document.getElementById("fetch-data").addEventListener("click", function () {
+        const selectedApi = document.getElementById("api-selector").value;
+        const apiUrl = apiMapping[selectedApi];
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("error-message").textContent = data.error;
+                    document.getElementById("table-container").innerHTML = "";
+                } else {
+                    document.getElementById("error-message").textContent = "";
+                    renderTable(data);
+                }
+            })
+            .catch(error => {
+                document.getElementById("error-message").textContent = "Error fetching data.";
+                console.error("Error:", error);
+            });
+    });
+
+    // Функція для відображення таблиці
+    function renderTable(data) {
+        if (!data || data.length === 0) {
+            document.getElementById("table-container").innerHTML = "<p>No data found.</p>";
+            return;
+        }
+
+        let table = "<table>";
+        table += "<tr>";
+
+        // Рендер заголовків таблиці
+        for (const column of Object.keys(data[0])) {
+            table += `<th>${column}</th>`;
+        }
+        table += "</tr>";
+
+        // Рендер рядків таблиці
+        for (const row of data) {
+            table += "<tr>";
+            for (const cell of Object.values(row)) {
+                table += `<td>${cell}</td>`;
+            }
+            table += "</tr>";
+        }
+
+        table += "</table>";
+        document.getElementById("table-container").innerHTML = table;
+    }
+</script>
+
+</body>
+</html>

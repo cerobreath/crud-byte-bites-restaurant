@@ -1,17 +1,18 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/byte-bites-restaurant
     username: postgres
-    password:
+    password: estimefun2005
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
   application:
-    name: testLatticeApp
+    name: ByteBitesRestaurantApp
 
 endpoints:
   health:
