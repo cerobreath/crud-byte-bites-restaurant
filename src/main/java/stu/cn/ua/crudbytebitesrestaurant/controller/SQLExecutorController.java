@@ -7,9 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +38,9 @@ import java.util.Map;
 //                continue;
 //            }
 //
+//            // Перевірка заборонених запитів
+//            validateQuery(singleQuery);
+//
 //            try {
 //                if (singleQuery.toLowerCase().startsWith("select")) {
 //                    // Виконання SELECT запитів
@@ -58,6 +59,25 @@ import java.util.Map;
 //        }
 //
 //        return results;
+//    }
+//
+//    private void validateQuery(String query) {
+//        String lowerQuery = query.toLowerCase();
+//
+//        // Забороняємо DELETE без WHERE
+//        if (lowerQuery.startsWith("delete") && !lowerQuery.contains("where")) {
+//            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "DELETE without WHERE is not allowed.");
+//        }
+//
+//        // Забороняємо TRUNCATE
+//        if (lowerQuery.startsWith("truncate")) {
+//            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "TRUNCATE is not allowed.");
+//        }
+//
+//        // Забороняємо DROP
+//        if (lowerQuery.startsWith("drop")) {
+//            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "DROP operations are not allowed.");
+//        }
 //    }
 //}
 
