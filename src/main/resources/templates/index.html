@@ -182,7 +182,7 @@
             })
             .then(data => {
                 console.log("Response data:", data); // Логування відповіді від сервера
-                renderMultipleTables(data);
+                renderSQLResults(data);
                 displaySuccess("Query executed successfully!");
             })
             .catch(error => {
@@ -202,7 +202,7 @@
                 if (data.error) {
                     displayError(data.error);
                 } else {
-                    renderTable(data);
+                    renderStaticTable(data);
                     displaySuccess("Data fetched successfully!");
                 }
             })
@@ -212,51 +212,80 @@
             });
     });
 
-    function renderMultipleTables(data) {
+    function renderSQLResults(data) {
         const container = document.getElementById("table-container");
         container.innerHTML = "";
 
-        if (typeof data === 'string') {
-            container.innerHTML = `<p>${data}</p>`;
-            return;
-        }
-
-        // Перевірка на масив об'єктів
-        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
-            let table = `<h3>Query Results</h3>`;
-            table += "<table><tr>";
-
-            const columns = Object.keys(data[0]);
-            columns.forEach(column => {
-                table += `<th>${column}</th>`;
+        if (Array.isArray(data) && data.length > 0) {
+            data.forEach((result, index) => {
+                let tableHTML = `<h3>Query ${index + 1} Results</h3>`;
+                if (typeof result === "string") {
+                    tableHTML += `<p>${result}</p>`;
+                } else if (result.message) {
+                    // Відображення опису виконаних команд
+                    tableHTML += `<p>${result.query}: ${result.message}</p>`;
+                } else if (Array.isArray(result) && result.length > 0) {
+                    // Відображення результатів SELECT
+                    tableHTML += "<table><tr>";
+                    const columns = Object.keys(result[0]);
+                    columns.forEach(column => {
+                        tableHTML += `<th>${column}</th>`;
+                    });
+                    tableHTML += "</tr>";
+                    result.forEach(row => {
+                        tableHTML += "<tr>";
+                        columns.forEach(column => {
+                            tableHTML += `<td>${row[column] !== undefined ? row[column] : ''}</td>`;
+                        });
+                        tableHTML += "</tr>";
+                    });
+                    tableHTML += "</table>";
+                } else if (result.error) {
+                    // Відображення помилок
+                    tableHTML += `<p>Error: ${result.error}</p>`;
+                } else {
+                    tableHTML += `<p>No data found.</p>`;
+                }
+                container.innerHTML += tableHTML;
             });
-            table += "</tr>";
-
-            data.forEach(row => {
-                table += "<tr>";
-                columns.forEach(column => {
-                    const cell = row[column] !== undefined ? row[column] : '';
-                    table += `<td>${cell}</td>`;
-                });
-                table += "</tr>";
-            });
-
-            table += "</table>";
-            container.innerHTML = table;
         } else {
             container.innerHTML = "<p>No data found.</p>";
         }
     }
 
-    function renderTable(data) {
-        renderMultipleTables(data);
+    // Функція для рендерингу статичних даних
+    function renderStaticTable(data) {
+        const container = document.getElementById("table-container");
+        container.innerHTML = "";
+
+        if (Array.isArray(data) && data.length > 0) {
+            let tableHTML = "<table><tr>";
+            const columns = Object.keys(data[0]);
+            columns.forEach(column => {
+                tableHTML += `<th>${column}</th>`;
+            });
+            tableHTML += "</tr>";
+            data.forEach(row => {
+                tableHTML += "<tr>";
+                columns.forEach(column => {
+                    tableHTML += `<td>${row[column] !== undefined ? row[column] : ''}</td>`;
+                });
+                tableHTML += "</tr>";
+            });
+            tableHTML += "</table>";
+            container.innerHTML = tableHTML;
+        } else {
+            container.innerHTML = "<p>No data found.</p>";
+        }
     }
 
+    // Відображення помилок
     function displayError(message) {
         document.getElementById("error-message").textContent = message;
         document.getElementById("success-message").textContent = "";
     }
 
+    // Відображення успішного виконання
     function displaySuccess(message) {
         document.getElementById("success-message").textContent = message;
         document.getElementById("error-message").textContent = "";
