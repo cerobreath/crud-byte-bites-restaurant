@@ -221,21 +221,23 @@
             return;
         }
 
+        // Перевірка на масив об'єктів
         if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
             let table = `<h3>Query Results</h3>`;
             table += "<table><tr>";
 
             const columns = Object.keys(data[0]);
-            for (const column of columns) {
+            columns.forEach(column => {
                 table += `<th>${column}</th>`;
-            }
+            });
             table += "</tr>";
 
             data.forEach(row => {
                 table += "<tr>";
-                for (const cell of columns.map(col => row[col])) {
-                    table += `<td>${cell !== undefined ? cell : ''}</td>`;
-                }
+                columns.forEach(column => {
+                    const cell = row[column] !== undefined ? row[column] : '';
+                    table += `<td>${cell}</td>`;
+                });
                 table += "</tr>";
             });
 
@@ -247,7 +249,7 @@
     }
 
     function renderTable(data) {
-        renderMultipleTables([data]);
+        renderMultipleTables(data);
     }
 
     function displayError(message) {
@@ -260,7 +262,6 @@
         document.getElementById("error-message").textContent = "";
     }
 </script>
-
 
 </body>
 </html>
