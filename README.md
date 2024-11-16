@@ -6,6 +6,7 @@ Byte Bites is a comprehensive restaurant management system designed for efficien
 - [Features](#features)
 - [Technologies](#technologies)
 - [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
 - [Getting Started](#getting-started)
 - [Endpoints](#endpoints)
 - [License](#license)
@@ -55,6 +56,46 @@ crudbytebitesrestaurant
     │   └── index.html                 # Frontend UI for interacting with the application
     └── application.yml                # Configuration settings for Spring Boot and PostgreSQL
 ```
+
+## Database Schema
+
+This project uses a PostgreSQL database, with the following schema:
+
+```sql
+CREATE TABLE Kitchen (
+    kitchen_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(255),
+    capacity INT
+);
+
+CREATE TABLE Dish (
+    dish_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    kitchen_id INT,
+    FOREIGN KEY (kitchen_id) REFERENCES Kitchen(kitchen_id)
+);
+
+CREATE TABLE Ingredients (
+    ingredient_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL, -- Quantity in stock
+    unit VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Dish_Ingredients (
+    dish_id INT,
+    ingredient_id INT,
+    amount DECIMAL(10, 2) NOT NULL, -- Amount of ingredient required for the dish
+    PRIMARY KEY (dish_id, ingredient_id),
+    FOREIGN KEY (dish_id) REFERENCES Dish(dish_id),
+    FOREIGN KEY (ingredient_id) REFERENCES Ingredients(ingredient_id)
+);
+```
+
+This schema enables structured relationships between kitchens, dishes, and ingredients, with the ability to associate ingredients with dishes and track stock levels.
 
 ## Getting Started
 
