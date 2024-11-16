@@ -3,65 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Management - SQL Query</title>
+    <title>Coffee-Themed Restaurant SQL Management</title>
     <style>
         /* Кавова палітра */
         body {
             font-family: 'Georgia', serif;
-            background-color: #f5f0e1; /* кремовий фон */
+            background-color: #f5efe6; /* кремовий фон */
             color: #5c4033; /* темно-коричневий текст */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            padding: 0;
         }
 
         .container {
             width: 90%;
             max-width: 800px;
             padding: 20px;
-            background-color: #ede4db; /* світло-бежевий фон */
-            border: 4px solid #bca086; /* коричнева рамка */
+            background-color: #f3e8dd; /* світло-бежевий фон */
+            border: 4px solid #c3a995; /* темно-коричнева рамка */
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             text-align: center;
         }
 
         h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 28px;
             color: #8b5e3c; /* теплий коричневий */
+            margin-bottom: 20px;
         }
 
         .sql-input, .api-selector, .submit-button {
             width: 100%;
-            background-color: #f7f2ec; /* кремовий відтінок */
+            background-color: #fdf8f4; /* світло-кремовий фон */
             color: #5c4033;
-            border: 2px solid #bca086;
+            border: 2px solid #bfa588;
             padding: 12px;
             font-size: 16px;
             border-radius: 8px;
             margin-bottom: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             transition: all 0.2s ease-in-out;
         }
 
-        .sql-input:focus, .api-selector:focus, .submit-button:focus {
-            outline: none;
+        .sql-input:focus, .api-selector:focus {
             border-color: #8b5e3c;
-            box-shadow: 0 0 8px rgba(139, 94, 60, 0.2);
+            outline: none;
         }
 
         .submit-button {
             cursor: pointer;
-            background-color: #d9c2ac; /* світло-коричневий */
+            background-color: #bfa288;
+            transition: background-color 0.3s ease;
         }
 
         .submit-button:hover {
-            background-color: #bfa288; /* темніший коричневий */
+            background-color: #a67c52; /* темніший відтінок */
         }
 
         .table-container {
@@ -72,8 +70,8 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
             background-color: #fff;
+            margin-bottom: 20px;
         }
 
         th, td {
@@ -84,26 +82,28 @@
         }
 
         th {
-            background-color: #e6ccb2; /* м'який бежевий */
-            color: #5c4033;
+            background-color: #c8a97e;
+            color: #3e2723;
         }
 
         td {
-            background-color: #fdfcf8;
-            color: #4a2f25;
+            background-color: #f4ece7;
         }
 
         .error {
-            color: #e74c3c; /* червоний для помилок */
+            color: #e74c3c;
+            font-weight: bold;
             margin-top: 15px;
         }
 
         .success {
-            color: #27ae60; /* зелений для успіху */
+            color: #27ae60;
+            font-weight: bold;
+            margin-top: 15px;
         }
 
         .footer {
-            margin-top: 20px;
+            margin-top: 30px;
             font-size: 12px;
             color: #8b5e3c;
         }
@@ -112,13 +112,13 @@
 <body>
 
 <div class="container">
-    <h1>🍽️ Restaurant Management - SQL Query</h1>
+    <h1>🍽️ Restaurant Management</h1>
 
     <!-- Поле для введення SQL-запиту -->
     <textarea id="sql-input" class="sql-input" rows="4" placeholder="Enter your SQL query here..."></textarea>
     <button id="execute-sql" class="submit-button">Execute SQL</button>
 
-    <!-- Випадаючий список для вибору контролера -->
+    <!-- Вибір існуючого API для отримання даних -->
     <select id="api-selector" class="api-selector">
         <option value="dishes">Fetch Dishes</option>
         <option value="ingredients">Fetch Ingredients</option>
@@ -127,14 +127,14 @@
     </select>
     <button id="fetch-data" class="submit-button">Fetch Data</button>
 
+    <div id="error-message" class="error"></div>
+    <div id="success-message" class="success"></div>
+
     <!-- Контейнер для таблиці -->
     <div id="table-container" class="table-container"></div>
-    <div id="error-message" class="error"></div>
 </div>
 
-<div class="footer">
-    by Denys Lysenok KI-221
-</div>
+<div class="footer">by Denys Lysenok KI-221</div>
 
 <script>
     const apiMapping = {
@@ -144,35 +144,55 @@
         'dish-ingredients': '/api/dish-ingredients'
     };
 
-    // Виконання SQL-запиту через SQLExecutorController
-    document.getElementById("execute-sql").addEventListener("click", function () {
-        const sqlQuery = document.getElementById("sql-input").value;
+    // Виконання SQL-запиту
+    document.getElementById("execute-sql").addEventListener("click", () => {
+        const sqlQuery = document.getElementById("sql-input").value.trim();
+
+        if (!sqlQuery) {
+            displayError("Please enter a valid SQL query.");
+            return;
+        }
+
+        // Показуємо попередження про небезпечні SQL-оператори
+        const unsafePatterns = /(\b(drop|delete|truncate|alter|create|update|insert|grant|revoke)\b)/i;
+        if (unsafePatterns.test(sqlQuery)) {
+            if (!confirm("This query may modify the database. Do you want to proceed?")) {
+                displayError("Query execution cancelled by user.");
+                return;
+            }
+        }
+
+        const requestBody = {
+            query: sqlQuery
+        };
 
         fetch('/api/sql/execute', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ query: sqlQuery })
+            body: JSON.stringify(requestBody)
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById("error-message").textContent = data.error;
-                    document.getElementById("table-container").innerHTML = "";
-                } else {
-                    document.getElementById("error-message").textContent = "";
-                    renderTable(data);
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || "Unknown error occurred");
                 }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Response data:", data); // Логування відповіді від сервера
+                renderMultipleTables(data);
+                displaySuccess("Query executed successfully!");
             })
             .catch(error => {
-                document.getElementById("error-message").textContent = "Error executing SQL query.";
+                displayError(error.message);
                 console.error("Error:", error);
             });
     });
 
     // Отримання даних через існуючі контролери
-    document.getElementById("fetch-data").addEventListener("click", function () {
+    document.getElementById("fetch-data").addEventListener("click", () => {
         const selectedApi = document.getElementById("api-selector").value;
         const apiUrl = apiMapping[selectedApi];
 
@@ -180,48 +200,67 @@
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    document.getElementById("error-message").textContent = data.error;
-                    document.getElementById("table-container").innerHTML = "";
+                    displayError(data.error);
                 } else {
-                    document.getElementById("error-message").textContent = "";
                     renderTable(data);
+                    displaySuccess("Data fetched successfully!");
                 }
             })
             .catch(error => {
-                document.getElementById("error-message").textContent = "Error fetching data.";
+                displayError("Error fetching data.");
                 console.error("Error:", error);
             });
     });
 
-    // Функція для відображення таблиці
-    function renderTable(data) {
-        if (!data || data.length === 0) {
-            document.getElementById("table-container").innerHTML = "<p>No data found.</p>";
+    function renderMultipleTables(data) {
+        const container = document.getElementById("table-container");
+        container.innerHTML = "";
+
+        if (typeof data === 'string') {
+            container.innerHTML = `<p>${data}</p>`;
             return;
         }
 
-        let table = "<table>";
-        table += "<tr>";
+        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+            let table = `<h3>Query Results</h3>`;
+            table += "<table><tr>";
 
-        // Рендер заголовків таблиці
-        for (const column of Object.keys(data[0])) {
-            table += `<th>${column}</th>`;
-        }
-        table += "</tr>";
-
-        // Рендер рядків таблиці
-        for (const row of data) {
-            table += "<tr>";
-            for (const cell of Object.values(row)) {
-                table += `<td>${cell}</td>`;
+            const columns = Object.keys(data[0]);
+            for (const column of columns) {
+                table += `<th>${column}</th>`;
             }
             table += "</tr>";
-        }
 
-        table += "</table>";
-        document.getElementById("table-container").innerHTML = table;
+            data.forEach(row => {
+                table += "<tr>";
+                for (const cell of columns.map(col => row[col])) {
+                    table += `<td>${cell !== undefined ? cell : ''}</td>`;
+                }
+                table += "</tr>";
+            });
+
+            table += "</table>";
+            container.innerHTML = table;
+        } else {
+            container.innerHTML = "<p>No data found.</p>";
+        }
+    }
+
+    function renderTable(data) {
+        renderMultipleTables([data]);
+    }
+
+    function displayError(message) {
+        document.getElementById("error-message").textContent = message;
+        document.getElementById("success-message").textContent = "";
+    }
+
+    function displaySuccess(message) {
+        document.getElementById("success-message").textContent = message;
+        document.getElementById("error-message").textContent = "";
     }
 </script>
+
 
 </body>
 </html>
